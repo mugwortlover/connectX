@@ -202,6 +202,23 @@ class Board:
         if self.width != old_board.width or self.height != old_board.height:
             raise ImportError('Board\'s sizes do not match')
 
+        old_anchor_node = old_board.top_row[0]
+        anchor_node = self.top_row[0]
+
+        while anchor_node != None:
+            copy_node = old_anchor_node
+            paste_node = anchor_node
+            
+            while copy_node != None:
+                paste_node.set_data(copy_node.get_data())
+
+                copy_node = copy_node.right
+                paste_node = paste_node.right
+
+            old_anchor_node = old_anchor_node.down
+            anchor_node = anchor_node.down
+
+
         
 
 
