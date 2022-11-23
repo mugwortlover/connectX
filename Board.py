@@ -2,10 +2,26 @@ from Node import Node
 from os import system as sys
 
 class Board:
-    def __init__(self, width, height):
+    def __init__(self, width, height, turn = 'x'):
         self.width = width
         self.height = height
+        self.turn = turn
         self.top_row = self.create_lattice(width, height)
+
+    def get_width(self):
+        return self.width
+
+    def get_height(self):
+        return self.height
+
+    def get_top_left(self):
+        return self.top_row[0]
+
+    def get_turn(self):
+        return self.turn
+
+    def get_top_row(self):
+        return self.top_row
     
     def create_lattice(self, width, height):
         top_list = []
@@ -67,16 +83,23 @@ class Board:
         print('-' * self.width * 2)
 
 
-    def drop(self, pos, val):
+    def drop(self, pos):
         cur_node = self.top_row[pos]
 
         if not cur_node.is_empty():
-            return -1
+            raise Exception('Illegal move')
 
         while cur_node.down != None and cur_node.down.is_empty():
             cur_node = cur_node.down
 
-        cur_node.set_data(val)
+        
+        cur_node.set_data(self.turn)
+
+        if self.turn == 'x':
+            self.turn = 'o'
+        else:
+            self.turn = 'x'
+
 
 
     def check_winners(self, length_of_win):
@@ -217,6 +240,8 @@ class Board:
 
             old_anchor_node = old_anchor_node.down
             anchor_node = anchor_node.down
+
+        self.turn = old_board.get_turn()
 
 
         

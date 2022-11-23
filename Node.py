@@ -26,3 +26,19 @@ class Node:
 
     def get_data(self):
         return self.data
+
+    
+    def get_pos(self):
+        cur_node = self
+        x = 0
+        while cur_node.left != None:
+            x += 1
+            cur_node = cur_node.left
+
+        cur_node = self
+        y = 0
+        while cur_node.up != None:
+            y += 1
+            cur_node = cur_node.up
+
+        return (x, y)

@@ -3,18 +3,13 @@ from os import system as sys
 
 def main(win_length):
 
-    board = Board(3, 3)
+    board = Board(5, 5)
 
-    switch = True
     while True:
         sys('clear')
         board.print_lattice()
         pos = int(input('pos: '))
-        if switch:
-            board.drop(pos, 'x')
-        else:
-            board.drop(pos, 'o')
-        switch = not switch
+        board.drop(pos)
 
         winner = board.check_winners(win_length)
         if winner != False:
@@ -24,6 +19,6 @@ def main(win_length):
             break
 
 if __name__ == '__main__':
-    main(3)
+    main(4)
 
 
