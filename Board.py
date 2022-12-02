@@ -220,6 +220,130 @@ class Board:
 
         return False
 
+
+    def avg_chain_length(self, chip_val, length_of_win):
+
+        def contains_all(list):
+            l = [chip_val, None]
+            count = 0
+            for val in list:
+                if not val in l:
+                    return False
+                elif val == chip_val:
+                    count += 1
+
+            if count == 0:
+                return False
+            else:
+                return count
+
+        def scan_list(list, length):
+            nonlocal total, count
+            for index in range(len(list) - length + 1):
+                value = contains_all(list[index : index + length])
+                if value != False and value != None:
+                    total += value
+                    count += 1
+
+
+
+        
+        total = 0
+        count = 0
+                    
+
+        #check all rows
+        anchor_node = self.top_row[0]
+
+        while anchor_node != None:
+            cur_node = anchor_node
+            row_list = []
+            while cur_node != None:
+                row_list.append(cur_node.get_data())
+                cur_node = cur_node.right
+            scan_list(row_list, length_of_win)
+            
+            anchor_node = anchor_node.down
+
+
+        #check all the columns
+        anchor_node = self.top_row[0]
+
+        while anchor_node != None:
+            cur_node = anchor_node
+            col_list = []
+            while cur_node != None:
+                col_list.append(cur_node.get_data())
+                cur_node = cur_node.down
+            scan_list(col_list, length_of_win)
+            
+            anchor_node = anchor_node.right
+
+        
+        #check first half of diagonals (negative slope)
+        anchor_node = self.top_row[0]
+
+        while anchor_node != None:
+            cur_node = anchor_node
+            diag_list = []
+            while cur_node != None:
+                diag_list.append(cur_node.get_data())
+                cur_node = cur_node.right
+                if cur_node != None:
+                    cur_node = cur_node.down
+            scan_list(diag_list, length_of_win)
+          
+            anchor_node = anchor_node.right
+
+
+        anchor_node = self.top_row[0].down
+
+        while anchor_node != None:
+            cur_node = anchor_node
+            diag_list = []
+            while cur_node != None:
+                diag_list.append(cur_node.get_data())
+                cur_node = cur_node.right
+                if cur_node != None:
+                    cur_node = cur_node.down
+            scan_list(diag_list, length_of_win)
+            
+            anchor_node = anchor_node.down
+
+
+        #check second half of diagonals (positive slope)
+        anchor_node = self.top_row[-1]
+
+        while anchor_node != None:
+            cur_node = anchor_node
+            diag_list = []
+            while cur_node != None:
+                diag_list.append(cur_node.get_data())
+                cur_node = cur_node.left
+                if cur_node != None:
+                    cur_node = cur_node.down
+            scan_list(diag_list, length_of_win)
+            
+            anchor_node = anchor_node.left
+
+
+        anchor_node = self.top_row[-1].down
+
+        while anchor_node != None:
+            cur_node = anchor_node
+            diag_list = []
+            while cur_node != None:
+                diag_list.append(cur_node.get_data())
+                cur_node = cur_node.left
+                if cur_node != None:
+                    cur_node = cur_node.down
+            scan_list(diag_list, length_of_win)
+            
+            anchor_node = anchor_node.down
+
+
+        return total / count
+
                 
     def import_data(self, old_board):
         if self.width != old_board.width or self.height != old_board.height:
@@ -251,23 +375,14 @@ class Board:
 if __name__ == '__main__':
     board = Board(7, 6)
 
-    switch = True
-    while True:
-        sys('clear')
-        board.print_lattice()
-        pos = int(input('pos: '))
-        if switch:
-            board.drop(pos, 'x')
-        else:
-            board.drop(pos, 'o')
-        switch = not switch
+    from random import randint
+    for i in range(10):
+        board.drop(randint(0, 6))
 
-        winner = board.check_winners(4)
-        if winner != False:
-            sys('clear')
-            board.print_lattice()
-            print(f'{winner} won!')
-            break
+    board.print_lattice()
+    print(board.avg_chain_length('x', 4))
+    
+
 
         
 

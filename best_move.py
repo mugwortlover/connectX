@@ -7,6 +7,7 @@ def best_move(starting_board, depth):
 
     def build_tree_rec(cur_node, depth, current_depth):
         if current_depth < depth:
+            #print(current_depth)
             
             for i in range(cur_node.get_data().get_width()):
                 if cur_node.get_data().get_top_row()[i].is_empty():
@@ -21,16 +22,26 @@ def best_move(starting_board, depth):
                 build_tree_rec(node, depth, current_depth + 1)
          
 
+    #see the future (create tree)
     tree = Tree(TreeNode(starting_board))
     build_tree_rec(tree.get_root(), depth, 0)
 
-    display_tree(tree, {'x': 'green', 'o': 'blue'})
+    #if a move win the game, do that
+    
 
 
+
+
+
+    return tree
 
 if __name__ == '__main__':
-    test = Board(10, 10)
-    best_move(test, 2)
+    test = Board(5, 5)
+    tree = best_move(test, 3)
+    display_tree(tree.get_root(), {'x': 'green', 'o': 'blue'}, False)
+    
+    
+
             
 
     

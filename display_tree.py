@@ -1,12 +1,23 @@
-from pgl import GWindow, GLine, GRect, GOval, GCompound, GState, GLabel
+from pgl import GWindow, GLine, GRect, GOval, GCompound, GState, GLabel, GPoint
 from Tree import Tree
 from TreeNode import TreeNode
 from Board import Board
+import math
 
 
-def display_tree(tree, config_dict):
+def display_tree(root_node, config_dict, show_bboxes = False, initial_scale_factor = 1.0):
+    '''
+    function to graphically display the connectX tree of possibilities
+
+    @root_node (TreeNode): root node of tree
+    @config_dict (dict): dict matching the boards' data values to colors 
+        ex. if the boards contained data values ('x', 'o') then {'x': 'red', 'o': 'blue'} would match 'x' to red and 'o' to blue
+    @show_bboxes (bool): flag to display bounding boxes around the GCompounds. Default: False
+    @initial_scale_factor (float): initial scale factor. Default: 1.0
+    '''
 
     def create_arrow_compound(x1, y1, x2, y2, color = 'grey'):
+        #create a compound for connecting arrows
         compound = GCompound()
 
         line = GLine(x1, y1, x2, y2)
@@ -20,13 +31,16 @@ def display_tree(tree, config_dict):
         return compound        
 
     def create_board_compound(board):
+        #create a GCompound for one board
+
+        nonlocal scale_factor
         compound = GCompound()
 
         #create grid
         for x in range(board.get_width()):
             for y in range(board.get_height()):
-                rect = GRect(25, 25)
-                compound.add(rect, x * 25, y * 25)
+                rect = GRect(25 * scale_factor, 25 * scale_factor)
+                compound.add(rect, x * 25 * scale_factor, y * 25 * scale_factor)
 
         
         anchor_node = board.get_top_left()
@@ -38,14 +52,14 @@ def display_tree(tree, config_dict):
             while cur_node != None:
                 if cur_node.get_data() != None:
                     pos = cur_node.get_pos()
-                    circle = GOval(15, 15)
+                    circle = GOval(15 * scale_factor, 15 * scale_factor)
                     circle.set_filled(True)
 
                     if not cur_node.get_data() in config_dict.keys():
                         raise Exception(f'data value {cur_node.get_data()} has no entry in config_dict')
 
                     circle.set_color(config_dict[cur_node.get_data()])
-                    compound.add(circle, pos[0] * 25 + 5, pos[1] * 25 + 5)
+                    compound.add(circle, (pos[0] * 25 + 5) * scale_factor, (pos[1] * 25 + 5) * scale_factor)
 
                 cur_node = cur_node.right
             anchor_node = anchor_node.down
@@ -54,13 +68,16 @@ def display_tree(tree, config_dict):
 
 
     def create_subtree_compound(parent_compound, child_surface_list):
+        #creates a GCompound that inclues a parent compound (a single Board compound) and its child compounds
         example_child = child_surface_list[0]
         compound = GCompound()
 
         #adding bounding rects because GCompound is funny like that
         bounding_rect = GRect(len(child_surface_list) * example_child.get_width() + SPACER * (len(child_surface_list) + 1), 2 * BOARD_PHEIGHT + example_child.get_height())
-        bounding_rect.set_color('red')
-        #bounding_rect.set_visible(False)  #set this to true to see the bounding rectangles
+        if show_bboxes:
+            bounding_rect.set_color('red')
+        else:
+            bounding_rect.set_color('white')
         compound.add(bounding_rect)
 
 
@@ -78,6 +95,7 @@ def display_tree(tree, config_dict):
 
 
     def process_node_rec(node):
+        #recursively process all nodes to create tree
         if node.is_leaf():
             return create_board_compound(node.get_data())
 
@@ -91,61 +109,93 @@ def display_tree(tree, config_dict):
 
 
     def drag_handler(e):
+        #callback function for mouse drag
+        nonlocal scale_factor
         if gs.last_x != None:
             dx, dy = e.get_x() - gs.last_x, e.get_y() - gs.last_y
-            if not gs.zoom_mode:
-                comp.move(dx, dy)
-            else:
-                direction = dy / abs(dy)
-                comp.scale(1 + direction * 0.1)
-
+            gw.comp.move(dx, dy)
+            point = gw.comp.get_location()
+            gs.comp_location = (point.get_x(), point.get_y())
+          
+                
         gs.last_x, gs.last_y = e.get_x(), e.get_y()
 
 
 
     def mouseup_handler(e):
+        #callback function for the end of mouse drag
         gs.last_x, gs.last_y = None, None
 
 
     def key_handler(e):
+        #callback function for keys
+        nonlocal scale_factor
         key = e.get_key()
 
-        if key == '<SPACE>':
-            gs.zoom_mode = not gs.zoom_mode
+        if key == 'a':
+            scale_factor += 0.1
+            main_display()
+            #gw.comp.move(gw.comp.get_width() / 2, gw.comp.get_height() / 2)
 
-            if gs.zoom_mode:
-                gw.label.set_label('mode: zoom')
-            else:
-                gw.label.set_label('mode: move')
+        elif key == 's':
+            scale_factor -= 0.1
+            main_display()
+            #gw.comp.move(gw.comp.get_width() / 2, gw.comp.get_height() / 2)
+
+
+    def main_display():
+        #display the objects on the GWindow
+
+        #update distance constants to match new scale factor
+        nonlocal BOARD_PWIDTH, BOARD_PHEIGHT, SPACER, scale_factor
+        BOARD_PWIDTH = root_node.get_data().get_width() * 25 * scale_factor   #board pixel width
+        BOARD_PHEIGHT = root_node.get_data().get_height() * 25 * scale_factor   #board pixel height
+        SPACER = 50 * scale_factor #pixels of whitespace between boards
+
+        if gw.comp != None:
+            gw.remove(gw.comp)
+
+        #white background
+        rect = GRect(gw.get_width(), gw.get_height())
+        rect.set_filled(True)
+        rect.set_color('white')
+        gw.add(rect)
+
+        #graphical tree
+        gw.comp = process_node_rec(root_node)
+        x, y = gs.comp_location[0], gs.comp_location[1]
+        gw.add(gw.comp, x, y)
+
+        #label
+        gw.label = GLabel(f'zoom: {round(scale_factor, 1)}X')
+
+        gw.label.set_font("bold 10px 'arial'")
+        gw.add(gw.label, 10, 10)
         
 
 
 
-
     #constants
-    BOARD_PWIDTH = tree.get_root().get_data().get_width() * 25   #board pixel width
-    BOARD_PHEIGHT = tree.get_root().get_data().get_height() * 25   #board pixel height
-    SPACER = 50  #pixels of whitespace between boards
+    scale_factor = 1
+    BOARD_PWIDTH = root_node.get_data().get_width() * 25 * scale_factor   #board pixel width
+    BOARD_PHEIGHT = root_node.get_data().get_height() * 25 * scale_factor   #board pixel height
+    SPACER = 50 * scale_factor #pixels of whitespace between boards
 
-
-    
-    comp = GCompound()
-    comp.add(process_node_rec(tree.get_root()))
-
+    #initialize GWindow, GState, and listeners
     gw = GWindow(2560, 1600)
-    gw.add(comp, 0, 0)
-
-    gw.label = GLabel('mode: move')
-    gw.label.set_font("bold 10px 'arial'")
-    gw.add(gw.label, 5, 5)
-
+    gw.comp = None
+    
     gs = GState()
     gs.last_x, gs.last_y = None, None
-    gs.zoom_mode = False
+    gs.comp_location = (0, 0)
+
+    main_display()
 
     gw.add_event_listener('drag', drag_handler)
     gw.add_event_listener('mousemove', mouseup_handler)
-    #gw.add_event_listener('key', key_handler)
+    gw.add_event_listener('key', key_handler)
+
+
 
 
     
