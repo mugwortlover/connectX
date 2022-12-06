@@ -36,9 +36,12 @@ def best_move(starting_board, depth):
     return tree
 
 if __name__ == '__main__':
-    test = Board(5, 5)
-    tree = best_move(test, 3)
-    display_tree(tree.get_root(), {'x': 'green', 'o': 'blue'}, False)
+    from random import randint
+    test = Board(4, 4)
+    for i in range(7):
+        test.drop(randint(0, 3))
+    tree = best_move(test, 6)
+    display_tree(tree.get_root(), {'x': 'green', 'o': 'blue'}, 0.5, dev_flag=False)
     
     
 
